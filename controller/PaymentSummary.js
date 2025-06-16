@@ -296,7 +296,7 @@ export const getMemberAndPaymentById = async (req, res) => {
                 case 'Provider':
                     paymentColumn = 'ProviderPayment';
                     break;
-                case 'Machine Dealer':
+                case 'MachineDealer':
                     paymentColumn = 'MachineDealerPayment';
                     break;
                 case 'Publisher':
