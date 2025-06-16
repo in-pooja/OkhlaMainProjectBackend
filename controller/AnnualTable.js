@@ -514,7 +514,7 @@ export const addNewYearAndInsertForAllMember = async (req, res) => {
                     payment = payments.Provider || 0;
                     registration = registrations.Provider || 0;
                     break;
-                case "Machine Dealer":
+                case "MachineDealer":
                     payment = payments.MachineDealer || 0;
                     registration = registrations.MachineDealer || 0;
                     break;
@@ -562,5 +562,5 @@ export const addNewYearAndInsertForAllMember = async (req, res) => {
     } catch (err) {
         console.error("Error adding year:", err);
         res.status(500).json({ success: false, message: "Internal server error"});
-    }
+}
 };

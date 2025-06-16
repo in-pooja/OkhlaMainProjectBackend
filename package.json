@@ -12,13 +12,18 @@
   "description": "",
   "dependencies": {
     "ajv": "^8.17.1",
+    "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "fastreport-cloud-sdk": "github:FastReports/FastReport-Cloud-JS",
     "jsonwebtoken": "^9.0.2",
     "mssql": "^11.0.1",
     "multer": "^2.0.1",
+    "nodemailer": "^7.0.3",
     "nodemon": "^3.1.10",
+    "pdfmake": "^0.2.20",
+    "puppeteer": "^24.10.0",
     "xlsx": "^0.18.5"
   }
 }

@@ -24,11 +24,18 @@
 // export default router;
 import express from 'express';
 import { createNewMember, getAllMembers, updateMember } from '../controller/NewMemberForm.js';
-import { getCompany, getMemberById, addPayment, getReceipts, getRegistrationFee, getSummaryByCompanyYear,ExtraDetail, getMemberAndPaymentSummaryById, getAllOtherPayments, getMemberAndPaymentById, addYear, getYear, getYearlySummary } from '../controller/PaymentSummary.js';
-import { signup,login } from '../controller/login.js';
+import { getCompany, getMemberById, addPayment, getReceipts, getRegistrationFee, getSummaryByCompanyYear, ExtraDetail, getMemberAndPaymentSummaryById, getAllOtherPayments, getMemberAndPaymentById, addYear, getYear, getYearlySummary } from '../controller/PaymentSummary.js';
+
+import { ReceipPDF } from '../controller/receipt.js'
 import { getAnnualPayments, insertAnnualPayments, addNewYearAndInsertForAllMember, getYearRange, updateAnnualPayment, ReceiptOfPayment, getReceiptOfPayment, YearlyPaymentList } from '../controller/AnnualTable.js';
- import { getCompanies,getYears,getDashboardData, getDashboardMultiYearData,getOtherPayments}from'../controller/Deshboard.js';
+import { getCompanies, getYears, getDashboardData, getDashboardMultiYearData, getOtherPayments } from '../controller/Deshboard.js';
 import { importExcelToDB } from "../helper/ImportExcelToDB.js";
+
+
+
+import { loginUser, createUser, getRoleByEmail, getAllUsers, updateUserByAdmin, changePassword } from '../controller/Admin.js';
+import { sendOTP, verifyOTP, resetPassword } from '../controller/OTPSend.js';
+
 import multer from 'multer';
 
 const router = express.Router();
@@ -41,9 +48,9 @@ router.get("/getCompany", getCompany);
 router.get("/getMemberById/:id", getMemberById);
 router.post("/addPayment", addPayment);
 router.get("/getReceipts", getReceipts);
-router.post("/signup", signup);
 
-router.post("/login", login);
+
+router.get("/receipt-pdf", ReceipPDF);
 router.get("/DuePayment", getSummaryByCompanyYear);
 router.get('/getMemberAndPaymentSummaryById/:id/:year', getMemberAndPaymentById);
 router.post('/addYear', addYear);
@@ -64,15 +71,25 @@ router.get('/companies', getCompanies);
 router.get('/payment-years', getYears);
 router.post('/dashboard-data', getDashboardData);
 router.post('/dashboard-multiyear', getDashboardMultiYearData);
-router.get('/other-payments',getOtherPayments)
+router.get('/other-payments', getOtherPayments)
 
 router.get('/payment-years', getYears);
 router.post('/dashboard-data', getDashboardData);
 router.post('/dashboard-multiyear', getDashboardMultiYearData);
-router.get('/other-payments',getOtherPayments)
+router.get('/other-payments', getOtherPayments)
 
 // router.get('/getMemberAndPaymentSummaryById/:id/:year', getMemberAndPaymentSummaryById)
 // router.get('/getMemberAndPaymentSummaryById/:id/:year', getMemberAndPaymentSummaryById);
+router.post('/login', loginUser);
+router.post('/createUser', createUser);
+router.post('/send-otp', sendOTP);
+router.post("/verify-otp", verifyOTP);
+router.post("/reset-password", resetPassword);
+router.get("/getRoleByEmail", getRoleByEmail);
+router.get("/getAllUsers", getAllUsers);
+router.post("/updateUserByAdmin", updateUserByAdmin);
+router.post("/changePassword", changePassword);
+
 
 
 const storage = multer.diskStorage({

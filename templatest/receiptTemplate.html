@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Receipt</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 40px;
+      background: #f8f9fa;
+    }
+
+    .receipt-container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border: 1px solid #ccc;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .receipt-header {
+      text-align: center;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+    }
+
+    .receipt-header h1 {
+      margin: 0;
+      color: #007bff;
+    }
+
+    .receipt-details p {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+
+    .receipt-details strong {
+      display: inline-block;
+      width: 180px;
+      color: #333;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 14px;
+      color: #888;
+    }
+
+    .paid-stamp {
+      text-align: right;
+      font-size: 24px;
+      color: green;
+      font-weight: bold;
+      margin-top: 30px;
+    }
+
+    .border-box {
+      border: 1px dashed #999;
+      padding: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="receipt-container">
+    <div class="receipt-header">
+      <h1>Okhla Printers Association</h1>
+      <p>Payment Receipt</p>
+    </div>
+    <div class="receipt-details border-box">
+      <p><strong>Receipt Number:</strong> {{ReceiptNumber}}</p>
+      <p><strong>Receipt Date:</strong> {{ReceiptDate}}</p>
+      <p><strong>Company Name:</strong> {{CompanyName}}</p>
+      <p><strong>Member Name:</strong> {{MemberName}}</p>
+
+
+
+      <p><strong>Received Amount:</strong> ₹{{ReceivedAmount}}</p>
+      <p><strong>Payment Mode:</strong> {{PaymentType}}</p>
+      <!-- <p><strong>For Year:</strong> {{PaymentYearDisplay}}</p>
+      <p><strong>Remark:</strong> {{RemarkDisplay}}</p> -->
+      {{PaymentYearSection}}
+      {{RemarkSection}}
+      {{ChequeNumberSection}}
+      {{ChequeReceiveOnSection}}
+
+
+
+      <!-- Signature box -->
+      <div style="margin-top: 50px; text-align: right;">
+        <p><strong>Authorized Signature</strong></p>
+        <div style="width: 170px; height: 50px; border-bottom: 1px solid #1b1414; margin-left: auto;"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      This is a computer-generated receipt.
+    </div>
+  </div>
+</body>
+
+</html>
