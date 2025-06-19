@@ -92,24 +92,26 @@ async function getReceiptData(receiptNo) {
 
   // If not found: Try from OtherPayments table
   const otherQuery = `
-    SELECT  
-      op.ReceiptNumber,
-      CONVERT(varchar, op.CreatedAt, 23) AS ReceiptDate,
-      m.CompanyName,
-      m.MemberName,
-      op.PaymentMode AS DisplayPaymentType,
-      op.Amount AS ReceivedAmount,
-      op.PaymentCategory AS PaymentType,
-      NULL AS PaymentYear,
-      op.Remark,
-      'other' AS Source
-    FROM 
-      OtherPayments op
-    JOIN 
-      Members m ON op.MembershipID = m.MembershipID
-    WHERE 
-      op.PaymentCategory IN ('Other', 'Registration')
-      AND op.ReceiptNumber = @ReceiptNo
+   SELECT  
+    op.ReceiptNumber,
+    CONVERT(varchar, op.CreatedAt, 23) AS ReceiptDate,
+    m.CompanyName,
+    m.MemberName,
+    op.PaymentMode AS DisplayPaymentType,
+    op.Amount AS ReceivedAmount,
+    op.PaymentCategory AS PaymentType,
+    op.ChequeNumber,
+    op.ChequeReceiveOn,
+    NULL AS PaymentYear,
+    op.Remark,
+    'other' AS Source
+  FROM 
+    OtherPayments op
+  JOIN 
+    Members m ON op.MembershipID = m.MembershipID
+  WHERE 
+    op.PaymentCategory IN ('Other', 'Registration')
+    AND op.ReceiptNumber = @ReceiptNo
   `;
 
   const otherResult = await pool
@@ -119,62 +121,6 @@ async function getReceiptData(receiptNo) {
 
   return otherResult.recordset.length > 0 ? otherResult.recordset[0] : null;
 }
-
-
-
-
-// app.get('/Ohkla/report/receipt', async (req, res) => {
-//   const receiptNo = req.query.receiptNo;
-//   if (!receiptNo) {
-//     return res.status(400).send('receiptNo param is required');
-//   }
-
-//   try {
-//     const data = await getReceiptData(receiptNo);
-//     if (!data) return res.status(404).send('Receipt not found');
-
-//     // Logic to decide dynamic fields
-//     const paymentType = (data.PaymentType || '').toLowerCase();
-//     const isOtherOrReg = paymentType === 'registration' || paymentType === 'other';
-
-//     const paymentYearHtml = !isOtherOrReg && data.PaymentYear
-//       ? `<p><strong>For Year:</strong> ${data.PaymentYear}</p>` : '';
-
-//     const remarkHtml = isOtherOrReg && data.Remark
-//       ? `<p><strong>Remark:</strong> ${data.Remark}</p>` : '';
-         
-//     // Inject static and dynamic values
-//     let html = fs.readFileSync(path.join('templatest/receiptTemplate.html'), 'utf8');
-//     html = html
-//       .replace('{{ReceiptNumber}}', data.ReceiptNumber || '')
-//       .replace('{{CompanyName}}', data.CompanyName || '')
-//       .replace('{{MemberName}}', data.MemberName || '')
-//       .replace('{{ReceiptDate}}', data.ReceiptDate || '')
-//       .replace('{{ReceivedAmount}}', data.ReceivedAmount || '')
-//       .replace('{{PaymentType}}', data.PaymentType || '')
-//       .replace('{{PaymentYearSection}}', paymentYearHtml)
-//       .replace('{{RemarkSection}}', remarkHtml);
-
-//     const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
-//     const page = await browser.newPage();
-//     await page.setContent(html, { waitUntil: 'networkidle0' });
-//     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-//     await browser.close();
-
-//     res.set({
-//       'Content-Type': 'application/pdf',
-//       'Content-Disposition': `inline; filename=Receipt_${receiptNo}.pdf`,
-//     });
-//     res.send(pdfBuffer);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send('Server Error while generating receipt');
-//   }
-// });
-
-// app.listen(5000, () => {
-//   console.log("🚀 Server started on http://localhost:5000");
-// });
 
 app.get('/Ohkla/report/receipt', async (req, res) => {
   const receiptNo = req.query.receiptNo;
@@ -202,6 +148,10 @@ app.get('/Ohkla/report/receipt', async (req, res) => {
 
     const paymentType = (data.PaymentType || '').toLowerCase();
     const isCheque = paymentType === 'cheque';
+    console.log("PaymentType:", data.PaymentType);
+console.log("ChequeNumber:", data.ChequeNumber);
+console.log("ChequeReceiveOn:", data.ChequeReceiveOn);
+
     
     const isOtherOrReg = paymentType === 'registration' || paymentType === 'other';
 
@@ -211,12 +161,12 @@ app.get('/Ohkla/report/receipt', async (req, res) => {
     const remarkHtml = isOtherOrReg && data.Remark
       ? `<p><strong>Remark:</strong> ${data.Remark}</p>` : '';
       
-const chequeNumberHtml = isCheque && data.ChequeNumber
+const chequeNumberHtml = data.ChequeNumber
   ? `<p><strong>Cheque Number:</strong> ${data.ChequeNumber}</p>` : '';
 
-  
-const chequeReceiveOnHtml = isCheque && data.ChequeReceiveOn
+const chequeReceiveOnHtml = data.ChequeReceiveOn
   ? `<p><strong>Cheque Received On:</strong> ${formatDate(data.ChequeReceiveOn)}</p>` : '';
+
 
           
     // Inject static and dynamic values
@@ -230,8 +180,9 @@ const chequeReceiveOnHtml = isCheque && data.ChequeReceiveOn
       .replace('{{PaymentType}}', data.PaymentType || '')
       .replace('{{PaymentYearSection}}', paymentYearHtml)
       .replace('{{RemarkSection}}', remarkHtml)
-    html = html.replace('{{ChequeNumberSection}}', chequeNumberHtml);
-    html = html.replace('{{ChequeReceiveOnSection}}', chequeReceiveOnHtml);
+  html = html.replace('{{ChequeNumberSection}}', chequeNumberHtml);
+html = html.replace('{{ChequeReceiveOnSection}}', chequeReceiveOnHtml);
+
 
 
     const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
@@ -250,6 +201,8 @@ const chequeReceiveOnHtml = isCheque && data.ChequeReceiveOn
     res.status(500).send('Server Error while generating receipt');
   }
 });
+
+
 
 app.listen(5000, () => {
   console.log("🚀 Server started on http://localhost:5000");
