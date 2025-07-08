@@ -102,7 +102,7 @@
 //     return res.status(200).json({ success: true, message: "Email sent successfully!" });
 
 //   } catch (error) {
-//     console.error("🔴 Email send error:", error);
+//     console.error(" Email send error:", error);
 //     return res.status(500).json({ success: false, message: "Failed to send email." });
 //   }
 // };

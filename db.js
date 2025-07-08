@@ -4,13 +4,13 @@ import sql from 'mssql';
 const config = {
   user: "Indus",
   password: "Param@99811",
-  server: "157.20.215.187",
-  database: "OkhlaTest",
+  server: "DESKTOP-P5I83O4",
+  database: "okkk",
   options: {
     trustServerCertificate: true,
     enableArithAbort: true,
     instancename: "sqlExpress"
-},
+  },
   port: 1433
 };
 
