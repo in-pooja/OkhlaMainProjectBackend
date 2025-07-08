@@ -20,45 +20,8 @@ app.use((req, res, next) => {
     console.log(`Incoming request: ${req.method} ${req.originalUrl}`);
     next();
 });
-
-// async function getReceiptData(receiptNo) {
-//   const pool = await poolPromise;
-
-//   const query = `
-//     SELECT 
-//       yps.ReceiptNumber,
-//       CONVERT(varchar, yps.ReceiptDate, 23) AS ReceiptDate,
-//       m.CompanyName,
-//       yps.AmountPaid AS ReceivedAmount,
-//       yps.PaymentType,
-//       yps.PaymentYear,
-//       m.MemberName,
-//       op.Remark, -- Join from OtherPayments
-//       CASE 
-//         WHEN yps.PaymentType = 'Cheque' THEN CONCAT('Cheque - ', yps.ChequeNumber)
-//         ELSE yps.PaymentType
-//       END AS DisplayPaymentType
-//     FROM YearlyPaymentSummary yps
-//     JOIN Members m ON yps.MembershipID = m.MembershipID
-//     LEFT JOIN OtherPayments op ON yps.ReceiptNumber = op.ReceiptNumber -- Add LEFT JOIN
-//     WHERE yps.ReceiptNumber = @ReceiptNo
-//   `;
-
-//   const result = await pool
-//     .request()
-//     .input('ReceiptNo', sql.VarChar, receiptNo)
-//     .query(query);
-
-//   return result.recordset.length > 0 ? result.recordset[0] : null;
-// }
-
-
-
-
 async function getReceiptData(receiptNo) {
   const pool = await poolPromise;
-
-  // First: Try to find in YearlyPaymentSummary
   const yearlyQuery = `
     SELECT 
       yps.ReceiptNumber,

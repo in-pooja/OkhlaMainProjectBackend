@@ -171,43 +171,88 @@ export const ReceiptOfPayment = async (req, res) => {
             return res.status(400).json({ error: "❌ MembershipID not found in Members table." });
         }
 
+        // const query = `
+        //     INSERT INTO Receipts (
+        //         ReceiptNumber,
+        //         ReceiptDate,
+        //         MembershipID,
+        //         ReceivedAmount,
+        //         PaymentMode,
+        //         PaymentType,
+        //         ChequeNumber,
+        //         BankName,
+        //         PaymentYear
+        //     ) VALUES (
+        //         @ReceiptNumber,
+        //         @ReceiptDate,
+        //         @MembershipID,
+        //         @ReceivedAmount,
+        //         @PaymentMode,
+        //         @PaymentType,
+        //         @ChequeNumber,
+        //         @BankName,
+        //         @PaymentYear
+        //     )
+        // `;
+
+        // await pool.request()
+        //     .input('ReceiptNumber', sql.VarChar(50), ReceiptNumber)
+        //     .input('ReceiptDate', sql.Date, ReceiptDate)
+        //     .input('MembershipID', sql.Int, MembershipID)
+        //     .input('ReceivedAmount', sql.Decimal(10, 2), ReceivedAmount)
+        //     .input('PaymentMode', sql.VarChar(50), PaymentMode)
+        //     .input('PaymentType', sql.VarChar(50), PaymentType)
+        //     .input('ChequeNumber', sql.VarChar(100), ChequeNumber || null)
+        //     .input('BankName', sql.VarChar(100), BankName || null)
+        //     .input('PaymentYear', sql.VarChar(20), PaymentType === 'Annual' ? PaymentYear : null)
+        //     .query(query);
+
+        // res.status(200).json({ message: "✅ Receipt added successfully." });
+
         const query = `
-            INSERT INTO Receipts (
-                ReceiptNumber,
-                ReceiptDate,
-                MembershipID,
-                ReceivedAmount,
-                PaymentMode,
-                PaymentType,
-                ChequeNumber,
-                BankName,
-                PaymentYear
-            ) VALUES (
-                @ReceiptNumber,
-                @ReceiptDate,
-                @MembershipID,
-                @ReceivedAmount,
-                @PaymentMode,
-                @PaymentType,
-                @ChequeNumber,
-                @BankName,
-                @PaymentYear
-            )
-        `;
+    INSERT INTO Receipts (
+        ReceiptNumber,
+        ReceiptDate,
+        MembershipID,
+        ReceivedAmount,
+        PaymentMode,
+        PaymentType,
+        ChequeNumber,
+        BankName,
+        PaymentYear
+    ) VALUES (
+        @ReceiptNumber,
+        @ReceiptDate,
+        @MembershipID,
+        @ReceivedAmount,
+        @PaymentMode,
+        @PaymentType,
+        @ChequeNumber,
+        @BankName,
+        @PaymentYear
+    );
 
-        await pool.request()
-            .input('ReceiptNumber', sql.VarChar(50), ReceiptNumber)
-            .input('ReceiptDate', sql.Date, ReceiptDate)
-            .input('MembershipID', sql.Int, MembershipID)
-            .input('ReceivedAmount', sql.Decimal(10, 2), ReceivedAmount)
-            .input('PaymentMode', sql.VarChar(50), PaymentMode)
-            .input('PaymentType', sql.VarChar(50), PaymentType)
-            .input('ChequeNumber', sql.VarChar(100), ChequeNumber || null)
-            .input('BankName', sql.VarChar(100), BankName || null)
-            .input('PaymentYear', sql.VarChar(20), PaymentType === 'Annual' ? PaymentYear : null)
-            .query(query);
+    SELECT SCOPE_IDENTITY() AS ReceiptID; -- 👈 This line fetches the newly inserted ID
+`;
 
-        res.status(200).json({ message: "✅ Receipt added successfully." });
+const result = await pool.request()
+    .input('ReceiptNumber', sql.VarChar(50), ReceiptNumber)
+    .input('ReceiptDate', sql.Date, ReceiptDate)
+    .input('MembershipID', sql.Int, MembershipID)
+    .input('ReceivedAmount', sql.Decimal(10, 2), ReceivedAmount)
+    .input('PaymentMode', sql.VarChar(50), PaymentMode)
+    .input('PaymentType', sql.VarChar(50), PaymentType)
+    .input('ChequeNumber', sql.VarChar(100), ChequeNumber || null)
+    .input('BankName', sql.VarChar(100), BankName || null)
+    .input('PaymentYear', sql.VarChar(20), PaymentType === 'Annual' ? PaymentYear : null)
+    .query(query);
+
+const insertedId = result.recordset[0].ReceiptID;
+
+res.status(200).json({
+    message: "✅ Receipt added successfully.",
+    ReceiptID: insertedId // 👈 Send this to frontend
+});
 
     } catch (err) {
         console.error("❌ Error adding receipt:", err.message);
@@ -220,6 +265,7 @@ export const getReceiptOfPayment = async (req, res) => {
 
         const result = await pool.request().query(`
             SELECT 
+                 r.ReceiptID,  
                 r.ReceiptNumber,
                 r.ReceiptDate,
                 m.CompanyName,

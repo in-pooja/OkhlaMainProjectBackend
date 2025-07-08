@@ -1,63 +1,68 @@
-    import { poolPromise, sql } from '../db.js';
-    import bcrypt from 'bcryptjs'; // 🔐 import bcrypt
-    export const loginUser = async (req, res) => {
-        const { email, password } = req.body;
-        console.log(req.body);
+import { poolPromise, sql } from '../db.js';
+import bcrypt from 'bcryptjs';
 
-        try {
-            const pool = await poolPromise;
-            const result = await pool.request()
-                .input("Email", sql.NVarChar, email)
-            .query("SELECT * FROM Users1 WHERE Email = @Email");
+export const loginUser = async (req, res) => {
+    const { email, password } = req.body;
 
-        if (result.recordset.length > 0) {
-            const user = result.recordset[0];
-             console.log("DEBUG: User Status -->", user.status);
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request()
+            .input("Email", sql.NVarChar, email)
+            .query("SELECT * FROM Users WHERE Email = @Email");
 
-                // ✅ Ignore case while comparing Status
-if ((user.status || "").trim().toLowerCase() !== "active")  
- {
-       console.log("DEBUG: User Status -->", user.status);
-    return res.status(403).json({
-        
-        success: false,
-        message: "Your account is deactivated. Please contact admin."
-    });
-}
-           const isMatch = await bcrypt.compare(password, user.Password);
-            if (isMatch) {
-                return res.json({
-                    success: true,
-                    user: {
-                        name: user.Name,
-                        role: user.Role,
-                        email: user.Email,
-                        userID: user.UserID
-                    }
-                });
-            } else {
-                return res.status(401).json({ success: false, message: "Invalid credentials" });
-            }
-        } else {
+        if (result.recordset.length === 0) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const user = result.recordset[0];
+        const isPasswordMatch = await bcrypt.compare(password, user.Password);
+
+        if (!isPasswordMatch) {
             return res.status(401).json({ success: false, message: "Invalid credentials" });
         }
+
+        // 🔄 TEMPORARY: Agar status deactivated hai, toh activate kar do
+        if ((user.status || "").trim().toLowerCase() !== "active") {
+            console.log("User status is deactivated, activating now...");
+
+            // Status ko update karo "active"
+            await pool.request()
+                .input("Email", sql.NVarChar, email)
+                .query("UPDATE Users SET Status = 'active' WHERE Email = @Email");
+
+            // 🔄 Latest user record fetch karo
+            const refreshed = await pool.request()
+                .input("Email", sql.NVarChar, email)
+                .query("SELECT * FROM Users WHERE Email = @Email");
+
+            console.log("User activated:", refreshed.recordset[0].Name);
+        }
+
+        // ✅ Login Success
+        return res.status(200).json({
+            success: true,
+            message: "Login successful",
+            user: {
+                name: user.Name,
+                email: user.Email,
+                role: user.Role,
+            }
+        });
+
     } catch (err) {
-        return res.status(500).json({ error: err.message });
+        console.error(err);
+        return res.status(500).json({ success: false, message: "Server error" });
     }
 };
 
 
+
 // ✅ CREATE USER or ADMIN
 export const createUser = async (req, res) => {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, emailType, senderEmail, senderPassword } = req.body;
 
-
-    // 🔍 Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    // 🔒 Password validation
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
-
 
     if (!emailRegex.test(email)) {
         return res.status(400).json({ success: false, message: "Invalid email format" });
@@ -71,26 +76,27 @@ export const createUser = async (req, res) => {
     }
 
     try {
-        const hashedPassword = await bcrypt.hash(password, 10); // 🔐 hash password
-
+        const hashedPassword = await bcrypt.hash(password, 10);
         const pool = await poolPromise;
         await pool.request()
             .input("Name", sql.NVarChar, name)
             .input("Email", sql.NVarChar, email)
             .input("Password", sql.NVarChar, hashedPassword)
-       .input("Role", sql.NVarChar, role.charAt(0).toUpperCase() + role.slice(1).toLowerCase())
+        .input("Role", sql.NVarChar, role.toLowerCase())
 
+            .input("EmailType", sql.NVarChar, emailType)
+            .input("SenderEmail", sql.NVarChar, senderEmail)
+            .input("SenderPassword", sql.NVarChar, senderPassword)
             .query(`
-                INSERT INTO Users1 (Name, Email, Password, Role) 
-                VALUES (@Name, @Email, @Password, @Role)
+                INSERT INTO Users (Name, Email, Password, Role, EmailType, SenderEmail, SenderPassword)
+                VALUES (@Name, @Email, @Password, @Role, @EmailType, @SenderEmail, @SenderPassword)
             `);
 
-        res.json(`{ success: true, message: ${role} created successfully }`);
+        res.json({ success: true, message: `${role} created successfully` });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
-
 
 // ✅ GET ROLE BY EMAIL (for dynamic check from frontend)
 export const getRoleByEmail = async (req, res) => {
@@ -101,7 +107,7 @@ export const getRoleByEmail = async (req, res) => {
         const pool = await poolPromise;
         const result = await pool.request()
             .input("Email", sql.NVarChar, Email) // use correct casing
-            .query("SELECT Role FROM Users1 WHERE Email = @Email"); // ✅ correct column name
+            .query("SELECT Role FROM Users WHERE Email = @Email"); // ✅ correct column name
 
         if (result.recordset.length > 0) {
             const role = result.recordset[0].Role;
@@ -125,7 +131,7 @@ export const getAllUsers = async (req, res) => {
                 Email, 
                 Role, 
                 Status AS [Status]  -- enforce case
-            FROM Users1
+            FROM Users
         `);
         res.json(result.recordset);
     } catch (err) {
@@ -147,7 +153,7 @@ export const updateUserByAdmin = async (req, res) => {
             .input("Role", sql.NVarChar(50), role)
             .input("Status", sql.NVarChar(10), status)
             .query(`
-                UPDATE Users1
+                UPDATE Users
                 SET Name = @Name,
                     Email = @Email,
                     Role = @Role,
@@ -165,8 +171,10 @@ export const updateUserByAdmin = async (req, res) => {
 
 export const changePassword = async (req, res) => {
     const { email, newPassword } = req.body;
+    console.log(newPassword);
 
-    const passwordRegex = /^(?=.[A-Z])(?=.\d)(?=.[!@#$%^&()_+{}\[\]:;<>,.?~\\/-]).{6,}$/;
+const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]).{6,}$/;
+
 
     // Validate new password format
     if (!passwordRegex.test(newPassword)) {
@@ -182,7 +190,7 @@ export const changePassword = async (req, res) => {
         // Check if user exists
         const userCheck = await pool.request()
             .input("Email", sql.NVarChar, email)
-            .query("SELECT * FROM Users1 WHERE Email = @Email");
+            .query("SELECT * FROM Users WHERE Email = @Email");
 
         if (userCheck.recordset.length === 0) {
             return res.status(404).json({ success: false, message: "User not found" });
@@ -194,7 +202,7 @@ export const changePassword = async (req, res) => {
         await pool.request()
             .input("Email", sql.NVarChar, email)
             .input("Password", sql.NVarChar, hashedPassword)
-            .query("UPDATE Users1 SET Password = @Password WHERE Email = @Email");
+            .query("UPDATE Users SET Password = @Password WHERE Email = @Email");
 
         return res.json({ success: true, message: "Password updated successfully" });
 
@@ -202,4 +210,16 @@ export const changePassword = async (req, res) => {
         console.error("Error resetting password:", err);
         res.status(500).json({ success: false, message: "Internal server error" });
 }
+};
+
+
+  export const OtherPaymentsDtails = async (req, res) => {
+  try {
+    const pool = await poolPromise; // ✅ Get DB pool
+    const result = await pool.request().query("SELECT * FROM OtherPayments"); // ✅ Use request
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error fetching payments:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };
